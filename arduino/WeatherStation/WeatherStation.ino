@@ -9,6 +9,7 @@
 #include <SparkFun_VEML6075_Arduino_Library.h>
 #include "SparkFun_AS3935.h"
 #include "utils.h"
+#include "commands.h"
 
 // #define DEBUG
 
@@ -167,9 +168,16 @@ void setup_routing() {
   server.begin();
 }
 
+void getBatteryLevelJson() {
+  char *stringBuffer;
+  getBatteryLevel();
+  stringBuffer = execute_command('b', 128);
+
+  server.send(200, "application/json", stringBuffer);
+}
+
 void getWeatherJson() {
   char stringBuffer[1024];
-  String stringBuff;
 
   DynamicJsonDocument doc(1024);
   JsonObject data = doc.createNestedObject("data");
