@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  zookeeper-1:
+    container_name: zookeeper-1
+    image: qbits/zookeeper:3.3.1
+    build:
+      context: ./zookeeper
+    volumes:
+    - ./config/zookeeper-1/zookeeper.properties:/kafka/config/zookeeper.properties
+    networks:
+    - kafka
+  broker-1:
+    container_name: broker-1
+    image: qbits/kafka:3.3.1
+    build:
+      context: .
+    volumes:
+    - ./config/broker-1/server.properties:/broker/config/server.properties
+    - ./data/broker-1/:/tmp/broker-logs/
+    networks:
+    - kafka
+  kafka-producer:
+    container_name: kafka-producer
+    image: qbits/kafka:3.3.1
+    build:
+     context: .
+    working_dir: /kafka
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+    networks:
+    - kafka
+  kafka-consumer: 
+    container_name: kafka-consumer
+    image: qbits/kafka:3.3.1
+    build: 
+      context: .
+    working_dir: /kafka
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+    networks:
+    - kafka
+networks:
+  kafka:
+    name: kafka
