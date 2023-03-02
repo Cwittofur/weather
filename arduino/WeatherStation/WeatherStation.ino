@@ -171,7 +171,7 @@ void setup_routing() {
 void getBatteryLevelJson() {
   char *stringBuffer;
   getBatteryLevel();
-  stringBuffer = execute_command('b', 128);
+  stringBuffer = execute_command('b');
 
   server.send(200, "application/json", stringBuffer);
 }
@@ -180,13 +180,12 @@ void getWeatherJson() {
   char stringBuffer[1024];
 
   DynamicJsonDocument doc(1024);
-  JsonObject data = doc.createNestedObject("data");
-  JsonObject uv = data.createNestedObject("uv");
-  JsonObject wind = data.createNestedObject("wind");
-  JsonObject thp = data.createNestedObject("thp");
-  JsonObject rain = data.createNestedObject("rain");
+  JsonObject uv = doc.createNestedObject("uv");
+  JsonObject wind = doc.createNestedObject("wind");
+  JsonObject thp = doc.createNestedObject("thp");
+  JsonObject rain = doc.createNestedObject("rain");
 
-  data["battery"] = voltage;
+  doc["battery"] = voltage;
 
   uv["a"] = uva;
   uv["b"] = uvb;
