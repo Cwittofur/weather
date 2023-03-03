@@ -53,7 +53,7 @@ func GetReadings() {
 	if err != nil {
 		fmt.Printf("Error getting weather information: %s\n", err.Error())
 	} else {
-		fmt.Printf("Temperature %f", stationReading.Thp.TempF)
+		fmt.Printf("%s\tBattery %f v\n", time.Now().UTC().Local() ,stationReading.Battery)
 	}
 }
 
@@ -70,6 +70,9 @@ func GetJson(url string, target interface{}) error {
 
 func main() { 
 	client = &http.Client{ Timeout: 10 * time.Second }
-
-	GetReadings()
+	for true {
+		GetReadings()
+		time.Sleep(time.Second * 30)
+	}
+	
 }
