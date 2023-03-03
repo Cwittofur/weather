@@ -49,11 +49,15 @@ func GetReadings() {
 
 	var stationReading ApiResponse
 
+
+	start := time.Now()
 	err := GetJson(url, &stationReading)
+	duration := time.Since(start)
+	
 	if err != nil {
 		fmt.Printf("Error getting weather information: %s\n", err.Error())
 	} else {
-		fmt.Printf("%s\tBattery %f v\n", time.Now().UTC().Local() ,stationReading.Battery)
+		fmt.Printf("%s\tBattery %f v\tDuration: %dms\n", time.Now().UTC().Local() ,stationReading.Battery, duration.Milliseconds())
 	}
 }
 
