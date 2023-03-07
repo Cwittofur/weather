@@ -101,6 +101,7 @@ float windGustSpeed;
 int windGustDirection;
 float windGustSpeedMax10m;
 int windGustDirectionMax10m;
+float windGustSpeedDailyMax;
 
 float hourlyRainAmount;
 float dailyRainAmount;
@@ -197,6 +198,7 @@ void getWeatherJson() {
   wind["direction2MinuteAverage"] = windDirectionAverage;
   wind["gustTenMinuteMaxSpeed"] = windGustSpeedMax10m;
   wind["gustTenMinuteMaxDirection"] = getDegreesFromDirection(windGustDirectionMax10m);
+  wind["maxDailyGust"] = windGustSpeedDailyMax;
 
   rain["hour"] = hourlyRainAmount;
   rain["daily"] = dailyRainAmount;
@@ -254,6 +256,7 @@ void init_variables() {
   wind10mGustIndex = 0;
   windSpeedAverage = 0;
   windDirectionAverage = 0;
+  windGustSpeedDailyMax = 0;
   
   hourlyRainAmount = 0;
   dailyRainAmount = 0;
@@ -361,6 +364,10 @@ void doEverySecond() {
   windSpeed = getWindSpeed();
   windDirection = getWindDirection();
 
+  if (windSpeed > windGustSpeedDailyMax) {
+    windGustSpeedDailyMax = windSpeed;    
+  }
+
   getSensorData();
 
   update2MinWindAverage();
@@ -452,7 +459,7 @@ void updateDailyRainfall() {
 void getSensorData() {
   tempF = tempSensor.readTempF();
   tempC = tempSensor.readTempC();
-  humidity = tempSensor.readFloatHumidity();
+  humidity = tempSensor.readFloatHumidity() / 100; // Convert from Pascal to Hectopascal (hPa)
   pressure = tempSensor.readFloatPressure();
   uva = uv.uva();
   uvb = uv.uvb();

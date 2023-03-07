@@ -30,6 +30,7 @@ type WindReading struct {
 	Direction2MinuteAverage float32 `json:"direction2MinuteAverage"`
 	GustTenMinuteMaxSpeed float32 `json:"gustTenMinuteMaxSpeed"`
 	GustTenMinuteMaxDirection float32 `json:"gustTenMinueMaxDirection"`
+	MaxDailyGust float32 `json:"maxDailyGust"`
 }
 
 type ThpReading struct {
