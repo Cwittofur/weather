@@ -342,13 +342,15 @@ void loop() {
       lightning.watchdogThreshold(disturber);  
     }
     else if(intVal == LIGHTNING_INT){
-      Serial.println("Lightning Strike Detected!"); 
-      // Lightning! Now how far away is it? Distance estimation takes into
-      // account any previously seen events in the last 15 seconds. 
-      byte distance = lightning.distanceToStorm(); 
-      Serial.print("Approximately: "); 
-      Serial.print(distance); 
-      Serial.println("km away!"); 
+      #ifdef DEBUG
+        Serial.println("Lightning Strike Detected!"); 
+        // Lightning! Now how far away is it? Distance estimation takes into
+        // account any previously seen events in the last 15 seconds. 
+        byte distance = lightning.distanceToStorm(); 
+        Serial.print("Approximately: "); 
+        Serial.print(distance); 
+        Serial.println("km away!"); 
+      #endif
     }
   }
 
@@ -538,8 +540,10 @@ byte getWindDirection() {
   */
 
 
-  Serial.print("Wind Direction 'adc' ");
-  Serial.println(adc);
+  #ifdef DEBUG
+    Serial.print("Wind Direction 'adc' ");
+    Serial.println(adc);
+  #endif
 
   return (16);
 }
