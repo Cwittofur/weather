@@ -161,6 +161,7 @@ void connectToWifi() {
 
 void setup_routing() {
   server.on("/", getWeatherJson); // Full Report
+  server.on("/m", getMidnightReport);
   // Battery Level
   // Temperature | Pressure | Humidity
   // UV
@@ -175,6 +176,11 @@ void getBatteryLevelJson() {
   stringBuffer = execute_command('b');
 
   server.send(200, "application/json", stringBuffer);
+}
+
+void getMidnightReport() {
+  getWeatherJson();
+  init_daily_variables();
 }
 
 void getWeatherJson() {
@@ -255,18 +261,23 @@ void init_variables() {
   windSpeed2mAverage = 0;
   wind10mGustIndex = 0;
   windSpeedAverage = 0;
-  windDirectionAverage = 0;
-  windGustSpeedDailyMax = 0;
+  windDirectionAverage = 0; 
   
-  hourlyRainAmount = 0;
-  dailyRainAmount = 0;
+  hourlyRainAmount = 0;  
 
   wind2mIndex = 0;
   rain1hIndex = 0;
   wind10mGustIndex = 0;
-  rainDailyIndex = 0;
+  
+  init_daily_variables();
 
   lastLoopCycleTime = millis();
+}
+
+void init_daily_variables() {
+  windGustSpeedDailyMax = 0;
+  dailyRainAmount = 0;
+  rainDailyIndex = 0;
 }
 
 void setup() {
@@ -461,8 +472,8 @@ void updateDailyRainfall() {
 void getSensorData() {
   tempF = tempSensor.readTempF();
   tempC = tempSensor.readTempC();
-  humidity = tempSensor.readFloatHumidity() / 100; // Convert from Pascal to Hectopascal (hPa)
-  pressure = tempSensor.readFloatPressure();
+  humidity = tempSensor.readFloatHumidity();
+  pressure = tempSensor.readFloatPressure() / 100; // Convert from Pascal to Hectopascal (hPa)
   uva = uv.uva();
   uvb = uv.uvb();
   uvIndex = uv.index();

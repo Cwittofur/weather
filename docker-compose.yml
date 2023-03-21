@@ -4,21 +4,21 @@ services:
     container_name: zookeeper-1
     image: qbits/zookeeper:3.3.1
     build:
-      context: ./zookeeper
+      context: ./kafka/zookeeper
     volumes:
-    - ./config/zookeeper-1/zookeeper.properties:/kafka/config/zookeeper.properties
+      - ./kafka/config/zookeeper-1/zookeeper.properties:/kafka/config/zookeeper.properties
     networks:
-    - kafka
-  broker-1:
-    container_name: broker-1
+      - kafka
+  kafka-1:
+    container_name: kafka-1
     image: qbits/kafka:3.3.1
     build:
-      context: .
+      context: ./kafka
     volumes:
-    - ./config/broker-1/server.properties:/broker/config/server.properties
-    - ./data/broker-1/:/tmp/broker-logs/
+      - ./kafka/config/kafka-1/server.properties:/kafka/config/server.properties
+      - ./kafka/data/kafka-1/:/tmp/kafka-logs/
     networks:
-    - kafka
+      - kafka
   kafka-producer:
     container_name: kafka-producer
     image: qbits/kafka:3.3.1
@@ -39,6 +39,14 @@ services:
     entrypoint: /bin/bash
     stdin_open: true
     tty: true
+    networks:
+    - kafka
+  service-relay:
+    container_name: service-relay
+    build: 
+      context: ./services/relay
+    ports:
+      - "8080:8080"
     networks:
     - kafka
 networks:
