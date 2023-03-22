@@ -411,18 +411,17 @@ void doEverySecond() {
     getBatteryLevel();
   }
 
+  if (diff(millis(), lastLightningStrikeTime) > 600000) {
+    lightningDistance = 0;
+    isLightning = 0;
+  }
+
   // Update wind gusts
   update1SecWindGust();
   calcWindMetrics();
 }
 
 void doEveryMinute() {
-
-  if (minutes % 10 == 0) {
-    lightningDistance = 0;
-    isLightning = 0;
-  }
-
   // Update 10 minute wind gusts
   update10MinWindGust();
 
