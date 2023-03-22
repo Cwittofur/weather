@@ -69,6 +69,7 @@ volatile unsigned long lastWindClickTime;
 
 unsigned long lastLoopCycleTime;
 unsigned long lastWindCheckTime;
+unsigned long lastLightningStrikeTime;
 byte seconds;
 byte minutes;
 int prevClientRequestTime;
@@ -92,6 +93,8 @@ byte wind2mIndex;
 byte rain1hIndex;
 byte wind10mGustIndex;
 byte rainDailyIndex;
+byte lightningHourlyIndex;
+byte isLightning;
 
 float windSpeed;
 int windDirection;
@@ -102,6 +105,7 @@ int windGustDirection;
 float windGustSpeedMax10m;
 int windGustDirectionMax10m;
 float windGustSpeedDailyMax;
+int lightningDistance;
 
 float hourlyRainAmount;
 float dailyRainAmount;
@@ -112,6 +116,8 @@ float windGustSpeed10mArray[GUST_10M_ARRAY_DEPTH];
 byte windGustDirection10mArray[GUST_10M_ARRAY_DEPTH];
 int rainPerHourArray[RAIN_1H_ARRAY_DEPTH];
 int rainDailyArray[RAIN_DAILY_ARRAY_DEPTH];
+int lightningPerHourArray[RAIN_1H_ARRAY_DEPTH];
+int lightningDailyArray[RAIN_DAILY_ARRAY_DEPTH];
 
 // This variable holds the number representing the lightning or non-lightning
 // event issued by the lightning detector. 
@@ -191,6 +197,7 @@ void getWeatherJson() {
   JsonObject wind = doc.createNestedObject("wind");
   JsonObject thp = doc.createNestedObject("thp");
   JsonObject rain = doc.createNestedObject("rain");
+  JsonObject lightning = doc.createNestedObject("lightning");
 
   doc["battery"] = voltage;
 
@@ -213,6 +220,9 @@ void getWeatherJson() {
   thp["tempF"] = tempF;
   thp["humidity"] = humidity;
   thp["pressure"] = pressure;
+
+  lightning["strike"] = isLightning == 1 ? true : false;
+  lightning["distance"] = lightningDistance;
 
   serializeJson(doc, stringBuffer);
 
@@ -257,17 +267,6 @@ void init_variables() {
   irqWindClicks = 0;
   lastWindClickTime = 0;
   prevClientRequestTime = int(millis() / 1000);
-  windDirection2mAverage = 0;
-  windSpeed2mAverage = 0;
-  wind10mGustIndex = 0;
-  windSpeedAverage = 0;
-  windDirectionAverage = 0; 
-  
-  hourlyRainAmount = 0;  
-
-  wind2mIndex = 0;
-  rain1hIndex = 0;
-  wind10mGustIndex = 0;
   
   init_daily_variables();
 
@@ -277,7 +276,21 @@ void init_variables() {
 void init_daily_variables() {
   windGustSpeedDailyMax = 0;
   dailyRainAmount = 0;
+  hourlyRainAmount = 0; 
+  
+  windDirection2mAverage = 0;
+  windSpeed2mAverage = 0;
+  windSpeedAverage = 0;
+  windDirectionAverage = 0;
+  windGustSpeedMax10m = 0;
+
+  lightningDistance = 0;
+  isLightning = 0;    
+
+  wind2mIndex = 0;
   rainDailyIndex = 0;
+  rain1hIndex = 0;
+  wind10mGustIndex = 0;
 }
 
 void setup() {
@@ -311,33 +324,7 @@ void setup() {
 void loop() {
   unsigned long currentTime;
 
-  currentTime = millis();
-
-  if (diff(currentTime, lastLoopCycleTime) > 999) {
-    lastLoopCycleTime = currentTime - (currentTime - lastLoopCycleTime) % 1000;
-
-    doEverySecond();
-    if (seconds == 59) {
-      doEveryMinute();
-    }
-
-    if (minutes == 59) {
-      doEveryHour();
-    }
-
-    seconds++;
-    if (seconds > 59) {
-      seconds = 0;
-
-      minutes++;
-
-      if (minutes > 59) {
-        minutes = 0;
-      }
-    }
-  }
-
-  // Hardware has alerted us to an event, now we read the interrupt register
+    // Hardware has alerted us to an event, now we read the interrupt register
   if(digitalRead(lightningInt) == HIGH){
     intVal = lightning.readInterruptReg();
     if(intVal == NOISE_INT){
@@ -353,15 +340,49 @@ void loop() {
       lightning.watchdogThreshold(disturber);  
     }
     else if(intVal == LIGHTNING_INT){
+      byte distance = lightning.distanceToStorm(); 
       #ifdef DEBUG
         Serial.println("Lightning Strike Detected!"); 
         // Lightning! Now how far away is it? Distance estimation takes into
-        // account any previously seen events in the last 15 seconds. 
-        byte distance = lightning.distanceToStorm(); 
+        // account any previously seen events in the last 15 seconds.         
         Serial.print("Approximately: "); 
         Serial.print(distance); 
         Serial.println("km away!"); 
       #endif
+
+      lastLightningStrikeTime = millis();
+      lightningDistance = distance;
+      isLightning = 1;
+
+    }
+  }
+
+  currentTime = millis();
+
+  if (diff(currentTime, lastLoopCycleTime) > 999) {
+    lastLoopCycleTime = currentTime - (currentTime - lastLoopCycleTime) % 1000;
+
+    
+    if (seconds % 60 == 0) {
+      doEveryMinute();
+    } 
+    else {
+      doEverySecond();
+    }
+
+    if (minutes % 60 == 0) {
+      doEveryHour();
+    }
+
+    seconds++;
+    if (seconds > 59) {
+      seconds = 0;
+
+      minutes++;
+
+      if (minutes > 59) {
+        minutes = 0;
+      }
     }
   }
 
@@ -396,6 +417,12 @@ void doEverySecond() {
 }
 
 void doEveryMinute() {
+
+  if (minutes % 10 == 0) {
+    lightningDistance = 0;
+    isLightning = 0;
+  }
+
   // Update 10 minute wind gusts
   update10MinWindGust();
 

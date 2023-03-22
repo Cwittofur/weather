@@ -20,6 +20,12 @@ Once inside there you can run:
 
 This will create the topic and now you can connect and send messages!
 
-## Sending Messages
+## Retrieving Messages
 
-Using the `kafka-producer` 
+Using the `kafka-consumer` exec into the container with:
+
+`docker exec -it kafka-1 bash`
+
+You may need to `cd` into the `bin` directory to use the following command to show all messages received from the beginning
+
+`./kafka-console-consumer.sh --bootstrap-server kafka-1:9092 --topic {topicName} --from-beginning`

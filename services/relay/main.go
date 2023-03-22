@@ -12,13 +12,14 @@ import (
 )
 
 type KafkaWXData struct {
-	Battery     float32       `json:"battery"`
-	Temperature float32       `json:"temperature"`
-	Fahrenheit  float32       `json:"f"`
-	Pressure    float32       `json:"pressure"`
-	Humidity    float32       `json:"humidity"`
-	KafkaWind   KafkaWindData `json:"w"`
-	Rain        RainReading   `json:"r"`
+	Battery     float32          `json:"battery"`
+	Temperature float32          `json:"temperature"`
+	Fahrenheit  float32          `json:"f"`
+	Pressure    float32          `json:"pressure"`
+	Humidity    float32          `json:"humidity"`
+	KafkaWind   KafkaWindData    `json:"w"`
+	Rain        RainReading      `json:"r"`
+	Lightning   LightningReading `json:"l"`
 }
 
 type KafkaWindData struct {
@@ -32,11 +33,12 @@ type KafkaWindData struct {
 }
 
 type ApiResponse struct {
-	Battery float32     `json:"battery"`
-	Uv      UVReading   `json:"uv"`
-	Wind    WindReading `json:"wind"`
-	Thp     ThpReading  `json:"thp"`
-	Rain    RainReading `json:"rain"`
+	Battery   float32          `json:"battery"`
+	Uv        UVReading        `json:"uv"`
+	Wind      WindReading      `json:"wind"`
+	Thp       ThpReading       `json:"thp"`
+	Rain      RainReading      `json:"rain"`
+	Lightning LightningReading `json:"lightning"`
 }
 
 type UVReading struct {
@@ -65,6 +67,11 @@ type ThpReading struct {
 type RainReading struct {
 	Hour  float32 `json:"hour"`
 	Daily float32 `json:"daily"`
+}
+
+type LightningReading struct {
+	Strike   bool `json:"strike"`
+	Distance int  `json:"distance"`
 }
 
 //func GetReadings() {
@@ -104,9 +111,11 @@ type RainReading struct {
 // }
 
 func main() {
-	topic := "my-topic"
-	brokerURL := "localhost:9092"
-	apiURL := "http://example.com/api"
+	topic := "wxTopic"
+	brokerURL := "kafka-1:9092"
+	// TODO : Make the apiUrl a param that gets passed in through the Dockerfile or compose file.
+	// For now this is fine
+	apiURL := "http://10.20.70.10"
 
 	for {
 		// Send API request
@@ -147,7 +156,8 @@ func main() {
 				GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
 				MaxDailyGust:        stationReading.Wind.MaxDailyGust,
 			},
-			Rain: stationReading.Rain,
+			Rain:      stationReading.Rain,
+			Lightning: stationReading.Lightning,
 		}
 
 		// Marshal message to JSON
@@ -179,6 +189,6 @@ func main() {
 		fmt.Println("Message sent to Kafka:", string(messageJSON))
 
 		// Wait for 1 second before sending the next request
-		time.Sleep(60 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }

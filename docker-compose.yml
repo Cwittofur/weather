@@ -42,11 +42,10 @@ services:
     networks:
     - kafka
   service-relay:
-    container_name: service-relay
+    container_name: wx-svc-relay
+    image: qbits/wx-svc-relay:0.0.3
     build: 
       context: ./services/relay
-    ports:
-      - "8080:8080"
     networks:
     - kafka
 networks:
