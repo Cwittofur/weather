@@ -233,6 +233,9 @@ void init_sensors() {
   Wire.begin();
   SPI.begin();
 
+  // Temp readings seem slightly higher than other sources, changing the temp by 1 degree to see if that helps
+  tempSensor.setTemperatureCorrection(-1.0);
+
   pinMode(lightningInt, INPUT);
   pinMode(WSPEED, INPUT_PULLUP);
   pinMode(RAIN, INPUT_PULLUP);
@@ -291,6 +294,8 @@ void init_daily_variables() {
   rainDailyIndex = 0;
   rain1hIndex = 0;
   wind10mGustIndex = 0;
+
+  memset(rainDailyArray, 0, sizeof(RAIN_DAILY_ARRAY_DEPTH));
 }
 
 void setup() {
