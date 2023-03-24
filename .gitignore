@@ -4,4 +4,6 @@
 
 kafka/data/*
 
+services/relay/bin
+
 .idea
