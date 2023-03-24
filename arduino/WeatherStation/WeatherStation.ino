@@ -199,18 +199,18 @@ void getWeatherJson() {
   JsonObject rain = doc.createNestedObject("rain");
   JsonObject lightning = doc.createNestedObject("lightning");
 
-  doc["battery"] = voltage;
+  // doc["battery"] = voltage;
 
   uv["a"] = uva;
   uv["b"] = uvb;
   uv["index"] = uvIndex;
 
   wind["speed"] = windSpeed;
-  wind["direction"] = getDegreesFromDirection(windDirection);
+  wind["direction"] = windDirection < 16 ? getDegreesFromDirection(windDirection) : -1;
   wind["speed2MinuteAverage"] = windSpeedAverage;
   wind["direction2MinuteAverage"] = windDirectionAverage;
   wind["gustTenMinuteMaxSpeed"] = windGustSpeedMax10m;
-  wind["gustTenMinuteMaxDirection"] = getDegreesFromDirection(windGustDirectionMax10m);
+  wind["gustTenMinuteMaxDirection"] = windDirection < 16 ? getDegreesFromDirection(windGustDirectionMax10m) : -1;
   wind["maxDailyGust"] = windGustSpeedDailyMax;
 
   rain["hour"] = hourlyRainAmount;
@@ -295,7 +295,8 @@ void init_daily_variables() {
   rain1hIndex = 0;
   wind10mGustIndex = 0;
 
-  memset(rainDailyArray, 0, sizeof(RAIN_DAILY_ARRAY_DEPTH));
+  memset(rainDailyArray, 0, RAIN_DAILY_ARRAY_DEPTH);
+  memset(rainPerHourArray, 0, RAIN_1H_ARRAY_DEPTH);
 }
 
 void setup() {
@@ -321,7 +322,7 @@ void setup() {
   lastLoopCycleTime = millis();
 
   // Initialize battery level on startup
-  getBatteryLevel();
+  //getBatteryLevel();
 
   delay(20);
 }
@@ -434,7 +435,7 @@ void doEveryMinute() {
   updateHourlyRainfall();
 
   hourlyRainAmount = calculateRainAmount(rainPerHourArray, RAIN_1H_ARRAY_DEPTH);
-  dailyRainAmount = calculateRainAmount(rainDailyArray, RAIN_DAILY_ARRAY_DEPTH);
+  dailyRainAmount = calculateRainAmount(rainPerHourArray, RAIN_DAILY_ARRAY_DEPTH);
 
   #ifdef DEBUG
     displayArrays('m');
@@ -545,41 +546,43 @@ byte getWindDirection() {
   unsigned int adc;
   adc = averageAnalogRead(WDIR);  //get the current readings from the sensor
 
-  if (adc <= 106) return 5;    // 112.5 ESE
-  if (adc <= 176) return 3;    // 67.5 ENE
-  if (adc <= 209) return 4;    // 90 E
-  if (adc <= 336) return 7;    // 157.5 SSE
-  if (adc <= 565) return 6;    // 135 SE
-  if (adc <= 795) return 9;    // 202.5 SSW
-  if (adc <= 962) return 8;    // 180 S
-  if (adc <= 1428) return 1;   // 22.5 NNE
-  if (adc <= 1650) return 2;   // 45 NE
-  if (adc <= 2190) return 11;  // 247.5 WSW
-  if (adc <= 2306) return 10;  // 225 SW
-  if (adc <= 2595) return 15;  // 337.5 NNW
-  if (adc <= 2933) return 0;   // 0 N
-  if (adc <= 3129) return 13;  // 292.5 WNW
-  if (adc <= 3456) return 14;  // 315 NW
-  if (adc <= 3842) return 12;  // 270 W
-
-  /* Older check with more constrictive parameters based on testing.
-    if (inRange(adc, 100, 106)) return 112.5;
-    if (inRange(adc, 171, 176)) return 67.5;
-    if (inRange(adc, 205, 209)) return 90;
-    if (inRange(adc, 330, 336)) return 157.5;
-    if (inRange(adc, 562, 565)) return 135;
-    if (inRange(adc, 790, 795)) return 202.5;
-    if (inRange(adc, 959, 962)) return 180;
-    if (inRange(adc, 1423, 1428)) return 22.5;
-    if (inRange(adc, 1646, 1650)) return 45;
-    if (inRange(adc, 2186, 2190)) return 247.5;
-    if (inRange(adc, 2303, 2306)) return 225;
-    if (inRange(adc, 2592, 2595)) return 337.5;
-    if (inRange(adc, 2928, 2933)) return 0;
-    if (inRange(adc, 3122, 3129)) return 292.5;
-    if (inRange(adc, 3449, 3456)) return 315;
-    if (inRange(adc, 3838, 3842)) return 270;
+  /*
+    if (adc <= 106) return 5;    // 112.5 ESE
+    if (adc <= 176) return 3;    // 67.5 ENE
+    if (adc <= 209) return 4;    // 90 E
+    if (adc <= 336) return 7;    // 157.5 SSE
+    if (adc <= 565) return 6;    // 135 SE
+    if (adc <= 795) return 9;    // 202.5 SSW
+    if (adc <= 962) return 8;    // 180 S
+    if (adc <= 1428) return 1;   // 22.5 NNE
+    if (adc <= 1650) return 2;   // 45 NE
+    if (adc <= 2190) return 11;  // 247.5 WSW
+    if (adc <= 2306) return 10;  // 225 SW
+    if (adc <= 2595) return 15;  // 337.5 NNW
+    if (adc <= 2933) return 0;   // 0 N
+    if (adc <= 3129) return 13;  // 292.5 WNW
+    if (adc <= 3456) return 14;  // 315 NW
+    if (adc <= 3842) return 12;  // 270 W
   */
+
+  // Older check with more constrictive parameters based on testing.
+  if (inRange(adc, 100, 106)) return 5;
+  if (inRange(adc, 171, 176)) return 3;
+  if (inRange(adc, 205, 209)) return 4;
+  if (inRange(adc, 330, 336)) return 7;
+  if (inRange(adc, 562, 565)) return 6;
+  if (inRange(adc, 790, 795)) return 9;
+  if (inRange(adc, 959, 962)) return 8;
+  if (inRange(adc, 1423, 1428)) return 1;
+  if (inRange(adc, 1646, 1650)) return 2;
+  if (inRange(adc, 2186, 2190)) return 11;
+  if (inRange(adc, 2303, 2306)) return 10;
+  if (inRange(adc, 2592, 2595)) return 15;
+  if (inRange(adc, 2928, 2933)) return 0;
+  if (inRange(adc, 3122, 3129)) return 13;
+  if (inRange(adc, 3449, 3456)) return 14;
+  if (inRange(adc, 3838, 3842)) return 12;
+
 
 
   #ifdef DEBUG
