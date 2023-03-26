@@ -368,26 +368,19 @@ void loop() {
   if (diff(currentTime, lastLoopCycleTime) > 999) {
     lastLoopCycleTime = currentTime - (currentTime - lastLoopCycleTime) % 1000;
 
+    doEverySecond();
     
-    if (seconds % 60 == 0) {
-      doEveryMinute();
-    } 
-    else {
-      doEverySecond();
-    }
-
-    if (minutes % 60 == 0) {
-      doEveryHour();
-    }
-
     seconds++;
     if (seconds > 59) {
       seconds = 0;
 
+      doEveryMinute();
+      
       minutes++;
 
       if (minutes > 59) {
         minutes = 0;
+        doEveryHour();
       }
     }
   }
@@ -413,9 +406,9 @@ void doEverySecond() {
   update2MinWindAverage();
 
   // Every 30 seconds get battery level
-  if (seconds % 30 == 0) {
-    getBatteryLevel();
-  }
+  // if (seconds % 30 == 0) {
+  //   getBatteryLevel();
+  // }
 
   if (diff(millis(), lastLightningStrikeTime) > 600000) {
     lightningDistance = 0;
@@ -444,7 +437,7 @@ void doEveryMinute() {
 }
 
 void doEveryHour() {
-  updateDailyRainfall();
+  hourlyRainfallUpdate();
 }
 
 void update2MinWindAverage() {
@@ -483,18 +476,18 @@ void update10MinWindGust() {
 
 void updateHourlyRainfall() {
   rainPerHourArray[rain1hIndex] = irqRainClicks;
-  rainDailyArray[rainDailyIndex] += irqRainClicks;
-  irqRainClicks = 0;
+  rainDailyArray[rainDailyIndex] = irqRainClicks;
+}
 
+void hourlyRainfallUpdate() {
+  rainDailyIndex++;
   rain1hIndex++;
+
+  irqRainClicks = 0;  
 
   if (rain1hIndex > RAIN_1H_ARRAY_DEPTH - 1) {
     rain1hIndex = 0;
   }
-}
-
-void updateDailyRainfall() {
-  rainDailyIndex++;
 
   if (rainDailyIndex > RAIN_DAILY_ARRAY_DEPTH) {
     rainDailyIndex = 0;
