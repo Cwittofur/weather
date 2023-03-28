@@ -43,9 +43,13 @@ services:
     - kafka
   service-relay:
     container_name: wx-svc-relay
-    image: qbits/wx-svc-relay:0.0.3
+    image: qbits/wx-svc-relay:0.0.4
     build: 
       context: ./services/relay
+    environment:
+      KAFKA_TOPIC: "wxTopic"
+      KAFKA_BROKERS: "kafka-1:9092,kafka-2:9092"
+      STATION_URL: "http://10.20.70.10"
     networks:
     - kafka
 networks:

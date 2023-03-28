@@ -22,7 +22,7 @@
 
 // Constants
 #define WIND_SENSOR_DEBOUNCE_SETTLING_TIME 10  // milliseconds
-#define RAIN_SENSOR_DEBOUNCE_SETTLING_TIME 50  // milliseconds
+#define RAIN_SENSOR_DEBOUNCE_SETTLING_TIME 75  // milliseconds
 #define HTTP_CONNECTION_TIMEOUT 500            // milliseconds
 #define RAIN_CLICK_CONVERSION_FACTOR 0.011     // inches per click
 #define WIND_CLICK_CONVERSION_FACTOR 1.492     // miles per hour per click

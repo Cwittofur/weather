@@ -4,15 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-co-op/gocron"
 	"io"
 	"net/http"
+	"os"
+	"strings"
+	_ "strings"
 	"time"
 
-	kafka "github.com/segmentio/kafka-go"
+	_ "github.com/go-co-op/gocron"
+	"github.com/segmentio/kafka-go"
 )
 
 type KafkaWXData struct {
-	Battery     float32          `json:"battery"`
+	//Battery     float32          `json:"battery"`
+	Timestamp   int64            `json:"timestamp"`
 	Temperature float32          `json:"temperature"`
 	Fahrenheit  float32          `json:"f"`
 	Pressure    float32          `json:"pressure"`
@@ -74,121 +80,101 @@ type LightningReading struct {
 	Distance int  `json:"distance"`
 }
 
-//func GetReadings() {
-//	url := "http://10.20.70.19"
-//
-//	var stationReading ApiResponse
-//
-//	start := time.Now()
-//	err := GetJson(url, &stationReading)
-//	duration := time.Since(start)
-//
-//	if err != nil {
-//		fmt.Printf("Error getting weather information: %s\n", err.Error())
-//	} else {
-//		fmt.Printf("%s\tBattery %f v\tDuration: %dms\n", time.Now().UTC().Local(), stationReading.Battery, duration.Milliseconds())
-//	}
-//}
-
-//func GetJson(url string, target interface{}) error {
-//	resp, err := client.Get(url)
-//	if err != nil {
-//		return err
-//	}
-//
-//	defer resp.Body.Close()
-//
-//	return json.NewDecoder(resp.Body).Decode(target)
-//}
-
-// func main() {
-// 	client = &http.Client{ Timeout: 10 * time.Second }
-// 	for true {
-// 		GetReadings()
-// 		time.Sleep(time.Second * 30)
-// 	}
-
-// }
-
-func main() {
-	topic := "wxTopic"
-	brokerURL := "kafka-1:9092"
+func fetchAndPushDataToKafka(isMidnight bool) {
+	topic := os.Getenv("KAFKA_TOPIC")
+	brokerURL := os.Getenv("KAFKA_BROKERS")
 	// TODO : Make the apiUrl a param that gets passed in through the Dockerfile or compose file.
 	// For now this is fine
-	apiURL := "http://10.20.70.10"
+	apiURL := os.Getenv("STATION_URL")
 
-	for {
-		// Send API request
-		resp, err := http.Get(apiURL)
-		if err != nil {
-			fmt.Println("Error sending API request:", err)
-			continue
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Error reading API response body:", err)
-			continue
-		}
-
-		// Unmarshal response JSON
-		var stationReading ApiResponse
-		err = json.Unmarshal(body, &stationReading)
-		if err != nil {
-			fmt.Println("Error unmarshaling API response JSON:", err)
-			continue
-		}
-
-		// Create new message
-		message := KafkaWXData{
-			Battery:     stationReading.Battery,
-			Temperature: stationReading.Thp.TempC,
-			Fahrenheit:  stationReading.Thp.TempF,
-			Humidity:    stationReading.Thp.Humidity,
-			Pressure:    stationReading.Thp.Pressure,
-			KafkaWind: KafkaWindData{
-				Speed:               stationReading.Wind.Speed,
-				Direction:           stationReading.Wind.Direction,
-				Speed2MinAvg:        stationReading.Wind.Speed2MinuteAverage,
-				Direction2MinAvg:    stationReading.Wind.Direction2MinuteAverage,
-				GustTenMinSpeed:     stationReading.Wind.GustTenMinuteMaxSpeed,
-				GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
-				MaxDailyGust:        stationReading.Wind.MaxDailyGust,
-			},
-			Rain:      stationReading.Rain,
-			Lightning: stationReading.Lightning,
-		}
-
-		// Marshal message to JSON
-		messageJSON, err := json.Marshal(message)
-		if err != nil {
-			fmt.Println("Error marshaling message to JSON:", err)
-			continue
-		}
-
-		// Send message to Kafka
-		writer := &kafka.Writer{
-			Addr:                   kafka.TCP(brokerURL),
-			Topic:                  topic,
-			Balancer:               &kafka.LeastBytes{},
-			AllowAutoTopicCreation: true,
-		}
-
-		err = writer.WriteMessages(context.Background(),
-			kafka.Message{
-				Value: messageJSON,
-			},
-		)
-
-		if err != nil {
-			fmt.Println("Error writing to Kafka:", err)
-			continue
-		}
-
-		fmt.Println("Message sent to Kafka:", string(messageJSON))
-
-		// Wait for 1 second before sending the next request
-		time.Sleep(1 * time.Second)
+	if isMidnight == true {
+		apiURL = apiURL + "/m"
 	}
+
+	fmt.Println("URL: ", apiURL)
+
+	// Send API request
+	resp, err := http.Get(apiURL)
+	if err != nil {
+		fmt.Println("Error sending API request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading API response body:", err)
+		return
+	}
+
+	// Unmarshal response JSON
+	var stationReading ApiResponse
+	err = json.Unmarshal(body, &stationReading)
+	if err != nil {
+		fmt.Println("Error unmarshaling API response JSON:", err)
+		return
+	}
+
+	// Create new message
+	message := KafkaWXData{
+		Timestamp:   time.Now().Unix(),
+		Temperature: stationReading.Thp.TempC,
+		Fahrenheit:  stationReading.Thp.TempF,
+		Humidity:    stationReading.Thp.Humidity,
+		Pressure:    stationReading.Thp.Pressure,
+		KafkaWind: KafkaWindData{
+			Speed:               stationReading.Wind.Speed,
+			Direction:           stationReading.Wind.Direction,
+			Speed2MinAvg:        stationReading.Wind.Speed2MinuteAverage,
+			Direction2MinAvg:    stationReading.Wind.Direction2MinuteAverage,
+			GustTenMinSpeed:     stationReading.Wind.GustTenMinuteMaxSpeed,
+			GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
+			MaxDailyGust:        stationReading.Wind.MaxDailyGust,
+		},
+		Rain:      stationReading.Rain,
+		Lightning: stationReading.Lightning,
+	}
+
+	// Marshal message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println("Error marshaling message to JSON:", err)
+		return
+	}
+
+	// Send message to Kafka
+	writer := &kafka.Writer{
+		Addr:                   kafka.TCP(strings.Split(brokerURL, ",")...),
+		Topic:                  topic,
+		Balancer:               &kafka.LeastBytes{},
+		AllowAutoTopicCreation: true,
+	}
+
+	err = writer.WriteMessages(context.Background(),
+		kafka.Message{
+			Value: messageJSON,
+		},
+	)
+
+	if err != nil {
+		fmt.Println("Error writing to Kafka:", err)
+		return
+	}
+
+	fmt.Println("Message sent to Kafka:", string(messageJSON))
+
+}
+
+func main() {
+	s := gocron.NewScheduler(time.Local)
+
+	s.Every(1).Seconds().Do(func() {
+		fetchAndPushDataToKafka(false)
+	})
+
+	s.Every(1).Day().At("00:00").Do(func() {
+		fetchAndPushDataToKafka(true)
+	})
+
+	s.StartBlocking()
 }
