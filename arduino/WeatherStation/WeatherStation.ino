@@ -427,7 +427,7 @@ void doEveryMinute() {
   // Update hourly rainfall amounts
   updateHourlyRainfall();
 
-  hourlyRainAmount = calculateRainAmount(rainPerHourArray, RAIN_1H_ARRAY_DEPTH);
+  hourlyRainAmount = float(rainPerHourArray[rain1hIndex] * RAIN_CLICK_CONVERSION_FACTOR);
   dailyRainAmount = calculateRainAmount(rainPerHourArray, RAIN_DAILY_ARRAY_DEPTH);
 
   #ifdef DEBUG
