@@ -28,6 +28,25 @@ type KafkaWXData struct {
 	Lightning   LightningReading `json:"l"`
 }
 
+type KafkaWxDataV2 struct {
+	T     int64   `json:"timestamp"`
+	TC    float32 `json:"tempC""`
+	TF    float32 `json:"tempF"`
+	H     float32 `json:"humidity"`
+	P     float32 `json:"pressure"`
+	WS    float32 `json:"windSpeed"`
+	WD    float32 `json:"windDirection"`
+	WS2M  float32 `json:"2mavg"`
+	WD2M  float32 `json:"2mdavg"`
+	G10M  float32 `json:"10mgust"`
+	G10MD float32 `json:"10mgdir"`
+	MDG   float32 `json:"maxDailyGust"`
+	R1H   float32 `json:"rain1Hour"`
+	RD    float32 `json:"rain24H"`
+	UVI   float32 `json:"uvIndex"`
+	L     int     `json:"lightning"`
+}
+
 type KafkaWindData struct {
 	Speed               float32 `json:"speed"`
 	Direction           float32 `json:"direction"`
@@ -91,8 +110,6 @@ func fetchAndPushDataToKafka(isMidnight bool) {
 		apiURL = apiURL + "/m"
 	}
 
-	fmt.Println("URL: ", apiURL)
-
 	// Send API request
 	resp, err := http.Get(apiURL)
 	if err != nil {
@@ -116,23 +133,42 @@ func fetchAndPushDataToKafka(isMidnight bool) {
 	}
 
 	// Create new message
-	message := KafkaWXData{
-		Timestamp:   time.Now().Unix(),
-		Temperature: stationReading.Thp.TempC,
-		Fahrenheit:  stationReading.Thp.TempF,
-		Humidity:    stationReading.Thp.Humidity,
-		Pressure:    stationReading.Thp.Pressure,
-		KafkaWind: KafkaWindData{
-			Speed:               stationReading.Wind.Speed,
-			Direction:           stationReading.Wind.Direction,
-			Speed2MinAvg:        stationReading.Wind.Speed2MinuteAverage,
-			Direction2MinAvg:    stationReading.Wind.Direction2MinuteAverage,
-			GustTenMinSpeed:     stationReading.Wind.GustTenMinuteMaxSpeed,
-			GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
-			MaxDailyGust:        stationReading.Wind.MaxDailyGust,
-		},
-		Rain:      stationReading.Rain,
-		Lightning: stationReading.Lightning,
+	// message := KafkaWXData{
+	//	Timestamp:   time.Now().Unix(),
+	//	Temperature: stationReading.Thp.TempC,
+	//	Fahrenheit:  stationReading.Thp.TempF,
+	//	Humidity:    stationReading.Thp.Humidity,
+	//	Pressure:    stationReading.Thp.Pressure,
+	//	KafkaWind: KafkaWindData{
+	//		Speed:               stationReading.Wind.Speed,
+	//		Direction:           stationReading.Wind.Direction,
+	//		Speed2MinAvg:        stationReading.Wind.Speed2MinuteAverage,
+	//		Direction2MinAvg:    stationReading.Wind.Direction2MinuteAverage,
+	//		GustTenMinSpeed:     stationReading.Wind.GustTenMinuteMaxSpeed,
+	//		GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
+	//		MaxDailyGust:        stationReading.Wind.MaxDailyGust,
+	//	},
+	//	Rain:      stationReading.Rain,
+	//	Lightning: stationReading.Lightning,
+	//}
+
+	message := KafkaWxDataV2{
+		T:     time.Now().Unix(),
+		TC:    stationReading.Thp.TempC,
+		TF:    stationReading.Thp.TempF,
+		H:     stationReading.Thp.Humidity,
+		P:     stationReading.Thp.Pressure,
+		WS:    stationReading.Wind.Speed,
+		WD:    stationReading.Wind.Direction,
+		WS2M:  stationReading.Wind.Speed2MinuteAverage,
+		WD2M:  stationReading.Wind.Direction2MinuteAverage,
+		G10M:  stationReading.Wind.GustTenMinuteMaxSpeed,
+		G10MD: stationReading.Wind.GustTenMinuteMaxDirection,
+		MDG:   stationReading.Wind.MaxDailyGust,
+		R1H:   stationReading.Rain.Hour,
+		RD:    stationReading.Rain.Daily,
+		UVI:   stationReading.Uv.Index,
+		L:     stationReading.Lightning.Distance,
 	}
 
 	// Marshal message to JSON

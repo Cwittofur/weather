@@ -52,6 +52,15 @@ services:
       STATION_URL: "http://10.20.70.10"
     networks:
     - kafka
+  grafana-dashboard:
+    container_name: wx-svc-dashboard
+    image: grafana/grafana-enterprise
+    ports:
+      - 3000:3000
+    environment:
+      - GF_INSTALL_PLUGINS=hamedkarbasi93-kafka-datasource
+    networks:
+    - kafka
 networks:
   kafka:
     name: kafka
