@@ -262,13 +262,7 @@ void init_sensors() {
   lightning.setIndoorOutdoor(OUTDOOR); 
 }
 
-void init_variables() {
-  irqRainClicks = 0;
-  irqTotalRainClicks = 0;
-  lastRainClickTime = 0;
-
-  irqWindClicks = 0;
-  lastWindClickTime = 0;
+void init_variables() {  
   prevClientRequestTime = int(millis() / 1000);
   
   init_daily_variables();
@@ -294,6 +288,13 @@ void init_daily_variables() {
   rainDailyIndex = 0;
   rain1hIndex = 0;
   wind10mGustIndex = 0;
+
+  irqRainClicks = 0;
+  irqTotalRainClicks = 0;
+  lastRainClickTime = 0;
+
+  irqWindClicks = 0;
+  lastWindClickTime = 0;
 
   memset(rainDailyArray, 0, RAIN_DAILY_ARRAY_DEPTH);
   memset(rainPerHourArray, 0, RAIN_1H_ARRAY_DEPTH);

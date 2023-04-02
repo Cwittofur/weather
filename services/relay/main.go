@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-co-op/gocron"
+	"github.com/segmentio/kafka-go"
 	"io"
 	"net/http"
 	"os"
 	"strings"
-	_ "strings"
 	"time"
 
 	_ "github.com/go-co-op/gocron"
-	"github.com/segmentio/kafka-go"
+	_ "github.com/segmentio/kafka-go"
 )
 
 type KafkaWXData struct {
@@ -99,29 +99,24 @@ type LightningReading struct {
 	Distance int  `json:"distance"`
 }
 
-func fetchAndPushDataToKafka(isMidnight bool) {
-	topic := os.Getenv("KAFKA_TOPIC")
-	brokerURL := os.Getenv("KAFKA_BROKERS")
-	// TODO : Make the apiUrl a param that gets passed in through the Dockerfile or compose file.
-	// For now this is fine
+func GetWeatherData(isMidnight bool) ApiResponse {
 	apiURL := os.Getenv("STATION_URL")
 
 	if isMidnight == true {
 		apiURL = apiURL + "/m"
 	}
 
-	// Send API request
 	resp, err := http.Get(apiURL)
 	if err != nil {
 		fmt.Println("Error sending API request:", err)
-		return
+		return ApiResponse{}
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading API response body:", err)
-		return
+		return ApiResponse{}
 	}
 
 	// Unmarshal response JSON
@@ -129,8 +124,105 @@ func fetchAndPushDataToKafka(isMidnight bool) {
 	err = json.Unmarshal(body, &stationReading)
 	if err != nil {
 		fmt.Println("Error unmarshaling API response JSON:", err)
+		return ApiResponse{}
+	}
+
+	return stationReading
+}
+
+func SendDataToKafka(data []byte, topic string) {
+	brokerURL := os.Getenv("KAFKA_BROKERS")
+
+	writer := &kafka.Writer{
+		Addr:                   kafka.TCP(strings.Split(brokerURL, ",")...),
+		Topic:                  topic,
+		Balancer:               &kafka.LeastBytes{},
+		AllowAutoTopicCreation: true,
+	}
+
+	err := writer.WriteMessages(context.Background(),
+		kafka.Message{
+			Value: data,
+		},
+	)
+
+	if err != nil {
+		fmt.Println("Error writing to Kafka:", err)
 		return
 	}
+
+	fmt.Println("Message sent to Kafka:", string(data))
+}
+
+func Wind() {
+	stationReading := GetWeatherData(false)
+
+	message := KafkaWindData{
+		Speed:               stationReading.Wind.Speed,
+		Direction:           stationReading.Wind.Direction,
+		Speed2MinAvg:        stationReading.Wind.Speed2MinuteAverage,
+		Direction2MinAvg:    stationReading.Wind.Direction2MinuteAverage,
+		GustTenMinSpeed:     stationReading.Wind.GustTenMinuteMaxSpeed,
+		GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
+		MaxDailyGust:        stationReading.Wind.MaxDailyGust,
+	}
+
+	marshaledMessage := MarshalToJSON(message)
+
+	if marshaledMessage != nil {
+		SendDataToKafka(marshaledMessage, "wxWind")
+	}
+}
+
+func Rain() {
+	stationReading := GetWeatherData(false)
+
+	message := RainReading{
+		Hour:  stationReading.Rain.Hour,
+		Daily: stationReading.Rain.Daily,
+	}
+
+	marshaledMessage := MarshalToJSON(message)
+
+	if marshaledMessage != nil {
+		SendDataToKafka(marshaledMessage, "wxRain")
+	}
+}
+
+func THP() {
+	stationReading := GetWeatherData(false)
+
+	message := ThpReading{
+		TempC:    stationReading.Thp.TempC,
+		TempF:    stationReading.Thp.TempF,
+		Humidity: stationReading.Thp.Humidity,
+		Pressure: stationReading.Thp.Pressure,
+	}
+
+	marshaledMessage := MarshalToJSON(message)
+
+	if marshaledMessage != nil {
+		SendDataToKafka(marshaledMessage, "wxTHP")
+	}
+}
+
+func MarshalToJSON(message interface{}) []byte {
+	// Marshal message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println("Error marshaling message to JSON:", err)
+		return nil
+	}
+
+	return messageJSON
+}
+
+func fetchAndPushDataToKafka(isMidnight bool) {
+
+	// TODO : Make the apiUrl a param that gets passed in through the Dockerfile or compose file.
+	// For now this is fine
+
+	// Send API request
 
 	// Create new message
 	// message := KafkaWXData{
@@ -151,6 +243,7 @@ func fetchAndPushDataToKafka(isMidnight bool) {
 	//	Rain:      stationReading.Rain,
 	//	Lightning: stationReading.Lightning,
 	//}
+	stationReading := GetWeatherData(isMidnight)
 
 	message := KafkaWxDataV2{
 		T:     time.Now().Unix(),
@@ -171,41 +264,28 @@ func fetchAndPushDataToKafka(isMidnight bool) {
 		L:     stationReading.Lightning.Distance,
 	}
 
-	// Marshal message to JSON
-	messageJSON, err := json.Marshal(message)
-	if err != nil {
-		fmt.Println("Error marshaling message to JSON:", err)
-		return
-	}
+	marshaledMessage := MarshalToJSON(message)
 
-	// Send message to Kafka
-	writer := &kafka.Writer{
-		Addr:                   kafka.TCP(strings.Split(brokerURL, ",")...),
-		Topic:                  topic,
-		Balancer:               &kafka.LeastBytes{},
-		AllowAutoTopicCreation: true,
-	}
-
-	err = writer.WriteMessages(context.Background(),
-		kafka.Message{
-			Value: messageJSON,
-		},
+	SendDataToKafka(
+		marshaledMessage,
+		"wxTopic",
 	)
-
-	if err != nil {
-		fmt.Println("Error writing to Kafka:", err)
-		return
-	}
-
-	fmt.Println("Message sent to Kafka:", string(messageJSON))
-
+	// Send message to Kafka
 }
 
 func main() {
 	s := gocron.NewScheduler(time.Local)
 
 	s.Every(1).Seconds().Do(func() {
-		fetchAndPushDataToKafka(false)
+		Wind()
+	})
+
+	s.Every(5).Seconds().Do(func() {
+		THP()
+	})
+
+	s.Every(1).Minutes().Do(func() {
+		Rain()
 	})
 
 	s.Every(1).Day().At("00:00").Do(func() {
