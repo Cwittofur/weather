@@ -168,6 +168,7 @@ void connectToWifi() {
 void setup_routing() {
   server.on("/", getWeatherJson); // Full Report
   server.on("/m", getMidnightReport);
+  server.on("/d", dumpArrays);
   // Battery Level
   // Temperature | Pressure | Humidity
   // UV
@@ -180,6 +181,56 @@ void getBatteryLevelJson() {
   char *stringBuffer;
   getBatteryLevel();
   stringBuffer = execute_command('b');
+
+  server.send(200, "application/json", stringBuffer);
+}
+
+void dumpArrays() {
+  String windDump;
+  String rainDump;
+  int i;
+
+  char stringBuffer[2048];
+
+  DynamicJsonDocument doc(2048);
+  JsonObject rain = doc.createNestedObject("rain");
+  JsonObject rain1h = rain.createNestedObject("hourly");
+  JsonObject rainDaily = rain.createNestedObject("daily");
+  JsonObject wind = doc.createNestedObject("wind");
+  JsonObject wind2m = wind.createNestedObject("twoMinute");
+  JsonObject windGust = wind.createNestedObject("gust");
+  // byte wind2mIndex;
+  // byte rain1hIndex;
+  // byte wind10mGustIndex;
+  // byte rainDailyIndex;
+  // byte lightningHourlyIndex;
+  // byte isLightning;
+
+  wind2m["index"] = wind2mIndex;
+  wind2m["arraySize"] = sizeof(windSpeed2mAverageArray);
+  for (i = 0; i < WIND_2M_ARRAY_DEPTH; i++) {
+    wind2m[String(i)] = windSpeed2mAverageArray[i];
+  }
+
+  windGust["index"] = wind10mGustIndex;
+  windGust["test"] = "testing";
+  for (i = 0; i < GUST_10M_ARRAY_DEPTH; i++) {
+    windGust[String(i)] = windGustSpeed10mArray[i];
+  }
+
+  rain1h["index"] = rain1hIndex;
+  for (i = 0; i < RAIN_1H_ARRAY_DEPTH; i++) {
+    rain1h[String(i)] = rainPerHourArray[i];
+  }
+
+  rainDaily["index"] = rainDailyIndex;
+  for (i = 0; i < RAIN_DAILY_ARRAY_DEPTH; i++) {
+    rainDaily[String(i)] = rainDailyArray[i];
+  }
+
+  
+
+  serializeJson(doc, stringBuffer);
 
   server.send(200, "application/json", stringBuffer);
 }
