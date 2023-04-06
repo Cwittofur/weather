@@ -4,16 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-co-op/gocron"
-	"github.com/segmentio/kafka-go"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	_ "github.com/go-co-op/gocron"
-	_ "github.com/segmentio/kafka-go"
+	"github.com/go-co-op/gocron"
+	"github.com/segmentio/kafka-go"
 )
 
 type KafkaWXData struct {
@@ -277,16 +275,17 @@ func main() {
 	s := gocron.NewScheduler(time.Local)
 
 	s.Every(1).Seconds().Do(func() {
-		Wind()
+		fetchAndPushDataToKafka(false)
+		//Wind()
 	})
 
-	s.Every(5).Seconds().Do(func() {
-		THP()
-	})
+	// s.Every(5).Seconds().Do(func() {
+	// 	THP()
+	// })
 
-	s.Every(1).Minutes().Do(func() {
-		Rain()
-	})
+	// s.Every(1).Minutes().Do(func() {
+	// 	Rain()
+	// })
 
 	s.Every(1).Day().At("00:00").Do(func() {
 		fetchAndPushDataToKafka(true)

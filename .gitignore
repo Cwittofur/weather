@@ -2,8 +2,11 @@
 
 *.exe
 
+.env
+
 kafka/data/*
 
 services/relay/bin
+services/influxdb/*
 
 .idea
