@@ -83,6 +83,8 @@ services:
       - 3000:3000
     volumes:
       - ./services/grafana/grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - service-influxdb
     networks:
       - wx
 networks:
