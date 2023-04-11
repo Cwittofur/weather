@@ -10,4 +10,6 @@ float getDegreesFromDirection(byte windDirection);
 
 int averageAnalogRead(int inputPin);
 
+byte getDirectionFromAnalogValue(int adc);
+
 #endif

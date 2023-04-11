@@ -97,7 +97,7 @@ byte lightningHourlyIndex;
 byte isLightning;
 
 float windSpeed;
-int windDirection;
+float windDirection;
 float windSpeedAverage;
 float windDirectionAverage;
 float windGustSpeed;
@@ -111,9 +111,9 @@ float hourlyRainAmount;
 float dailyRainAmount;
 
 float windSpeed2mAverageArray[WIND_2M_ARRAY_DEPTH];
-byte windDirection2mAverageArray[WIND_2M_ARRAY_DEPTH];
+float windDirection2mAverageArray[WIND_2M_ARRAY_DEPTH];
 float windGustSpeed10mArray[GUST_10M_ARRAY_DEPTH];
-byte windGustDirection10mArray[GUST_10M_ARRAY_DEPTH];
+float windGustDirection10mArray[GUST_10M_ARRAY_DEPTH];
 int rainPerHourArray[RAIN_1H_ARRAY_DEPTH];
 int rainDailyArray[RAIN_DAILY_ARRAY_DEPTH];
 int lightningPerHourArray[RAIN_1H_ARRAY_DEPTH];
@@ -257,11 +257,11 @@ void getWeatherJson() {
   uv["index"] = uvIndex;
 
   wind["speed"] = windSpeed;
-  wind["direction"] = windDirection < 16 ? getDegreesFromDirection(windDirection) : -1;
+  wind["direction"] = windDirection;
   wind["speed2MinuteAverage"] = windSpeedAverage;
   wind["direction2MinuteAverage"] = windDirectionAverage;
   wind["gustTenMinuteMaxSpeed"] = windGustSpeedMax10m;
-  wind["gustTenMinuteMaxDirection"] = windDirection < 16 ? getDegreesFromDirection(windGustDirectionMax10m) : -1;
+  wind["gustTenMinuteMaxDirection"] = windDirection;
   wind["maxDailyGust"] = windGustSpeedDailyMax;
 
   rain["hour"] = hourlyRainAmount;
@@ -587,54 +587,31 @@ float calculateRainAmount(int rainClicksArray[], word arraySize) {
   return float(rainClickCount * RAIN_CLICK_CONVERSION_FACTOR);
 }
 
-byte getWindDirection() {
+float getWindDirection() {
   unsigned int adc;
   adc = averageAnalogRead(WDIR);  //get the current readings from the sensor
 
-  
-  if (adc <= 106) return 5;    // 112.5 ESE
-  if (adc <= 176) return 3;    // 67.5 ENE
-  if (adc <= 209) return 4;    // 90 E
-  if (adc <= 336) return 7;    // 157.5 SSE
-  if (adc <= 565) return 6;    // 135 SE
-  if (adc <= 795) return 9;    // 202.5 SSW
-  if (adc <= 962) return 8;    // 180 S
-  if (adc <= 1428) return 1;   // 22.5 NNE
-  if (adc <= 1650) return 2;   // 45 NE
-  if (adc <= 2190) return 11;  // 247.5 WSW
-  if (adc <= 2306) return 10;  // 225 SW
-  if (adc <= 2595) return 15;  // 337.5 NNW
-  if (adc <= 2933) return 0;   // 0 N
-  if (adc <= 3129) return 13;  // 292.5 WNW
-  if (adc <= 3456) return 14;  // 315 NW
-  if (adc <= 3842) return 12;  // 270 W
+  byte i;
+  byte goodValues = 0; // If the direction returns 16 it means it was out of range; don't include it in average
+  float accumulator = 0;
+  unsigned int temp = 0;
 
-  // Older check with more constrictive parameters based on testing.
-  // if (inRange(adc, 100, 106)) return 5;
-  // if (inRange(adc, 171, 176)) return 3;
-  // if (inRange(adc, 205, 209)) return 4;
-  // if (inRange(adc, 330, 336)) return 7;
-  // if (inRange(adc, 562, 565)) return 6;
-  // if (inRange(adc, 790, 795)) return 9;
-  // if (inRange(adc, 959, 962)) return 8;
-  // if (inRange(adc, 1423, 1428)) return 1;
-  // if (inRange(adc, 1646, 1650)) return 2;
-  // if (inRange(adc, 2186, 2190)) return 11;
-  // if (inRange(adc, 2303, 2306)) return 10;
-  // if (inRange(adc, 2592, 2595)) return 15;
-  // if (inRange(adc, 2928, 2933)) return 0;
-  // if (inRange(adc, 3122, 3129)) return 13;
-  // if (inRange(adc, 3449, 3456)) return 14;
-  // if (inRange(adc, 3838, 3842)) return 12;
+  for (i = 0; i < 8; i++) {
+    adc = analogRead(WDIR);
+    temp = getDirectionFromAnalogValue(adc);
 
+    if (temp < 16) {
+      accumulator += getDegreesFromDirection(temp);
+      goodValues++;
+    }
+  }
 
+  return accumulator / goodValues;
 
   #ifdef DEBUG
     Serial.print("Wind Direction 'adc' ");
     Serial.println(adc);
   #endif
-
-  return (16);
 }
 
 // Need to redo this; it's off for some odd reason. Print out arrays I guess?
