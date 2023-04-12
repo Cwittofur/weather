@@ -632,7 +632,7 @@ void calcWindMetrics() {
 
   for (i = 0; i < WIND_2M_ARRAY_DEPTH; i++) {
     if (windDirection2mAverageArray[i] < 16) {
-      windDirectionSum += getDegreesFromDirection(windDirection2mAverageArray[i]);
+      windDirectionSum += windDirection2mAverageArray[i];
       windDirectionCount++;
     }
 
@@ -640,7 +640,7 @@ void calcWindMetrics() {
   }
 
   windSpeedAverage = windSpeedSum / WIND_2M_ARRAY_DEPTH;
-  windDirectionAverage = windDirectionSum / WIND_2M_ARRAY_DEPTH;
+  windDirectionAverage = windDirectionSum / windDirectionCount;
 }
 
 #ifdef DEBUG
