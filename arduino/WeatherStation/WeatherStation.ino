@@ -169,6 +169,7 @@ void setup_routing() {
   server.on("/", getWeatherJson); // Full Report
   server.on("/m", getMidnightReport);
   server.on("/d", dumpArrays);
+  server.on("/r", dumpRainArrays);
   // Battery Level
   // Temperature | Pressure | Humidity
   // UV
@@ -185,26 +186,43 @@ void getBatteryLevelJson() {
   server.send(200, "application/json", stringBuffer);
 }
 
+void dumpRainArrays() {
+  String rainDump;
+  int i;
+
+  char stringBuffer[1024];
+
+  DynamicJsonDocument doc(1024);
+
+  JsonObject rain = doc.createNestedObject("rain");
+  JsonObject rain1h = rain.createNestedObject("hourly");
+  JsonObject rainDaily = rain.createNestedObject("daily");
+    
+  rain1h["index"] = rain1hIndex;
+  for (i = 0; i < RAIN_1H_ARRAY_DEPTH; i++) {
+    rain1h[String(i)] = rainPerHourArray[i];
+  }
+
+  rainDaily["index"] = rainDailyIndex;
+  for (i = 0; i < RAIN_DAILY_ARRAY_DEPTH; i++) {
+    rainDaily[String(i)] = rainDailyArray[i];
+  }
+
+  serializeJson(doc, stringBuffer);
+
+  server.send(200, "application/json", stringBuffer);
+}
+
 void dumpArrays() {
   String windDump;
-  String rainDump;
   int i;
 
   char stringBuffer[2048];
 
   DynamicJsonDocument doc(2048);
-  JsonObject rain = doc.createNestedObject("rain");
-  JsonObject rain1h = rain.createNestedObject("hourly");
-  JsonObject rainDaily = rain.createNestedObject("daily");
   JsonObject wind = doc.createNestedObject("wind");
   JsonObject wind2m = wind.createNestedObject("twoMinute");
   JsonObject windGust = wind.createNestedObject("gust");
-  // byte wind2mIndex;
-  // byte rain1hIndex;
-  // byte wind10mGustIndex;
-  // byte rainDailyIndex;
-  // byte lightningHourlyIndex;
-  // byte isLightning;
 
   wind2m["index"] = wind2mIndex;
   wind2m["arraySize"] = sizeof(windSpeed2mAverageArray);
@@ -217,18 +235,6 @@ void dumpArrays() {
   for (i = 0; i < GUST_10M_ARRAY_DEPTH; i++) {
     windGust[String(i)] = windGustSpeed10mArray[i];
   }
-
-  rain1h["index"] = rain1hIndex;
-  for (i = 0; i < RAIN_1H_ARRAY_DEPTH; i++) {
-    rain1h[String(i)] = rainPerHourArray[i];
-  }
-
-  rainDaily["index"] = rainDailyIndex;
-  for (i = 0; i < RAIN_DAILY_ARRAY_DEPTH; i++) {
-    rainDaily[String(i)] = rainDailyArray[i];
-  }
-
-  
 
   serializeJson(doc, stringBuffer);
 
@@ -480,7 +486,7 @@ void doEveryMinute() {
   updateHourlyRainfall();
 
   hourlyRainAmount = float(rainPerHourArray[rain1hIndex] * RAIN_CLICK_CONVERSION_FACTOR);
-  dailyRainAmount = calculateRainAmount(rainPerHourArray, RAIN_DAILY_ARRAY_DEPTH);
+  dailyRainAmount = calculateRainAmount();
 
   #ifdef DEBUG
     displayArrays('m');
@@ -577,11 +583,11 @@ float getWindSpeed() {
   return float(clicksPerSecond * WIND_CLICK_CONVERSION_FACTOR);
 }
 
-float calculateRainAmount(int rainClicksArray[], word arraySize) {
+float calculateRainAmount() {
   int rainClickCount = 0;
 
-  for (int i = 0; i < arraySize - 1; i++) {
-    rainClickCount += rainClicksArray[i];
+  for (int i = 0; i < RAIN_DAILY_ARRAY_DEPTH - 1; i++) {
+    rainClickCount += rainPerHourArray[i];
   }
 
   return float(rainClickCount * RAIN_CLICK_CONVERSION_FACTOR);
