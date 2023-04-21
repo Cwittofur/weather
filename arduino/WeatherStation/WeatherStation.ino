@@ -547,7 +547,7 @@ void hourlyRainfallUpdate() {
     rain1hIndex = 0;
   }
 
-  if (rainDailyIndex > RAIN_DAILY_ARRAY_DEPTH) {
+  if (rainDailyIndex > RAIN_DAILY_ARRAY_DEPTH - 1) {
     rainDailyIndex = 0;
   }
 }
@@ -620,7 +620,6 @@ float getWindDirection() {
   #endif
 }
 
-// Need to redo this; it's off for some odd reason. Print out arrays I guess?
 void calcWindMetrics() {
   float windDirectionSum = 0;
   float windSpeedSum = 0;

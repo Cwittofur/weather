@@ -48,7 +48,7 @@ services:
       context: ./services/relay
     environment:
       KAFKA_TOPIC: "wxTopic"
-      KAFKA_BROKERS: "kafka-1:9092,kafka-2:9092"
+      KAFKA_BROKERS: "kafka-1:9092"
       STATION_URL: "http://10.20.70.10"
     networks:
       - wx
