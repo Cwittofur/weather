@@ -169,7 +169,8 @@ void setup_routing() {
   server.on("/", getWeatherJson); // Full Report
   server.on("/m", getMidnightReport);
   server.on("/d", dumpArrays);
-  server.on("/r", dumpRainArrays);
+  server.on("/rh", dumpRainHourlyArray);
+  server.on("/rd", dumpRainDailyArray);
   // Battery Level
   // Temperature | Pressure | Humidity
   // UV
@@ -186,7 +187,7 @@ void getBatteryLevelJson() {
   server.send(200, "application/json", stringBuffer);
 }
 
-void dumpRainArrays() {
+void dumpRainHourlyArray() {
   String rainDump;
   int i;
 
@@ -196,12 +197,27 @@ void dumpRainArrays() {
 
   JsonObject rain = doc.createNestedObject("rain");
   JsonObject rain1h = rain.createNestedObject("hourly");
-  JsonObject rainDaily = rain.createNestedObject("daily");
     
   rain1h["index"] = rain1hIndex;
   for (i = 0; i < RAIN_1H_ARRAY_DEPTH; i++) {
     rain1h[String(i)] = rainPerHourArray[i];
   }
+
+  serializeJson(doc, stringBuffer);
+
+  server.send(200, "application/json", stringBuffer);
+}
+
+void dumpRainDailyArray() {
+  String rainDump;
+  int i;
+
+  char stringBuffer[1024];
+
+  DynamicJsonDocument doc(1024);
+
+  JsonObject rain = doc.createNestedObject("rain");
+  JsonObject rainDaily = rain.createNestedObject("daily");
 
   rainDaily["index"] = rainDailyIndex;
   for (i = 0; i < RAIN_DAILY_ARRAY_DEPTH; i++) {
