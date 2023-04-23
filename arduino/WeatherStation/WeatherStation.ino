@@ -551,6 +551,8 @@ void update10MinWindGust() {
 void updateHourlyRainfall() {
   rainPerHourArray[rain1hIndex] = irqRainClicks;
   rainDailyArray[rainDailyIndex] = irqRainClicks;
+
+  rain1hIndex++;
 }
 
 void hourlyRainfallUpdate() {
