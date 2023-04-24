@@ -548,26 +548,30 @@ void update10MinWindGust() {
   windGustDirection10mArray[wind10mGustIndex] = 0;
 }
 
+// Every minute move the add the rain clicks
+// Increment the hourly index and set rain clicks to zero
 void updateHourlyRainfall() {
   rainPerHourArray[rain1hIndex] = irqRainClicks;
-  rainDailyArray[rainDailyIndex] = irqRainClicks;
+  rainDailyArray[rainDailyIndex] = irqTotalRainClicks;
 
   rain1hIndex++;
-}
-
-void hourlyRainfallUpdate() {
-  rainDailyIndex++;
-  rain1hIndex++;
-
-  irqRainClicks = 0;  
-
   if (rain1hIndex > RAIN_1H_ARRAY_DEPTH - 1) {
     rain1hIndex = 0;
   }
+  
+  // Now that this minute has passed, reset the rain clicks for the next minute
+  irqRainClicks = 0;
+}
+
+// Every hour, move the rain daily index up and reset total clicks
+void hourlyRainfallUpdate() {
+  rainDailyIndex++;
 
   if (rainDailyIndex > RAIN_DAILY_ARRAY_DEPTH - 1) {
     rainDailyIndex = 0;
   }
+
+  irqTotalRainClicks = 0;
 }
 
 void getSensorData() {
