@@ -502,7 +502,7 @@ void doEveryMinute() {
   updateHourlyRainfall();
 
   hourlyRainAmount = float(rainPerHourArray[rain1hIndex] * RAIN_CLICK_CONVERSION_FACTOR);
-  dailyRainAmount = calculateRainAmount();
+  dailyRainAmount = calculateDailyRainAmount();
 
   #ifdef DEBUG
     displayArrays('m');
@@ -605,11 +605,11 @@ float getWindSpeed() {
   return float(clicksPerSecond * WIND_CLICK_CONVERSION_FACTOR);
 }
 
-float calculateRainAmount() {
+float calculateDailyRainAmount() {
   int rainClickCount = 0;
 
   for (int i = 0; i < RAIN_DAILY_ARRAY_DEPTH - 1; i++) {
-    rainClickCount += rainPerHourArray[i];
+    rainClickCount += rainDailyArray[i];
   }
 
   return float(rainClickCount * RAIN_CLICK_CONVERSION_FACTOR);
