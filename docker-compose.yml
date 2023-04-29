@@ -2,7 +2,7 @@ version: "3.8"
 services:
   zookeeper-1:
     container_name: zookeeper-1
-    image: qbits/zookeeper:3.3.1
+    image: cwittofur/wx:zookeeper
     build:
       context: ./kafka/zookeeper
     volumes:
@@ -11,7 +11,7 @@ services:
       - wx
   kafka-1:
     container_name: kafka-1
-    image: qbits/kafka:3.3.1
+    image: cwittofur/wx:kafka
     build:
       context: ./kafka
     volumes:
@@ -19,31 +19,9 @@ services:
       - ./kafka/data/kafka-1/:/tmp/kafka-logs/
     networks:
       - wx
-  kafka-producer:
-    container_name: kafka-producer
-    image: qbits/kafka:3.3.1
-    build:
-      context: .
-    working_dir: /kafka
-    entrypoint: /bin/bash
-    stdin_open: true
-    tty: true
-    networks:
-      - wx
-  kafka-consumer:
-    container_name: kafka-consumer
-    image: qbits/kafka:3.3.1
-    build:
-      context: .
-    working_dir: /kafka
-    entrypoint: /bin/bash
-    stdin_open: true
-    tty: true
-    networks:
-      - wx
   service-relay:
     container_name: wx-svc-relay
-    image: qbits/wx-svc-relay:0.0.5
+    image: cwittofur/wx:svc-relay
     build:
       context: ./services/relay
     environment:

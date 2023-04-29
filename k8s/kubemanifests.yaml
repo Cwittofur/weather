@@ -1,0 +1,447 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: grafana-dashboard
+  name: grafana-dashboard
+spec:
+  ports:
+    - name: "3000"
+      port: 3000
+      targetPort: 3000
+  selector:
+    io.kompose.service: grafana-dashboard
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: service-influxdb
+  name: service-influxdb
+spec:
+  ports:
+    - name: "8086"
+      port: 8086
+      targetPort: 8086
+  selector:
+    io.kompose.service: service-influxdb
+status:
+  loadBalancer: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: grafana-dashboard
+  name: grafana-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: grafana-dashboard
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/wx: "true"
+        io.kompose.service: grafana-dashboard
+    spec:
+      containers:
+        - image: grafana/grafana-enterprise
+          name: wx-svc-dashboard
+          ports:
+            - containerPort: 3000
+          resources: {}
+      restartPolicy: Always
+      volumes:
+        - name: grafana-dashboard-claim0
+          persistentVolumeClaim:
+            claimName: grafana-dashboard-claim0
+status: {}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  name: wx
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              io.kompose.network/wx: "true"
+  podSelector:
+    matchLabels:
+      io.kompose.network/wx: "true"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: kafka-1
+  name: kafka-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: kafka-1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/wx: "true"
+        io.kompose.service: kafka-1
+    spec:
+      containers:
+        - image: cwittofur/wx:kafka
+          name: kafka-1
+          resources: {}
+          volumeMounts:
+            - mountPath: /tmp/kafka-logs
+              name: kafka-1-claim1
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: kafka-1-claim0
+          configMap:
+            name: kafka-1-config
+        - name: kafka-1-claim1
+          persistentVolumeClaim:
+            claimName: kafka-1-claim1
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: service-influxdb
+  name: service-influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: service-influxdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/wx: "true"
+        io.kompose.service: service-influxdb
+    spec:
+      containers:
+        - command:
+            - ./entrypoint.sh
+          env:
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_BUCKET
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_HOST
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_MODE
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_ORG
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_PASSWORD
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_PORT
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_RETENTION
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_RETENTION
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_USERNAME
+                  name: env
+            - name: GRAFANA_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: GRAFANA_PORT
+                  name: env
+            - name: TELEGRAF_CFG_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: TELEGRAF_CFG_PATH
+                  name: env
+          image: influxdb:2.7.0
+          name: wx-svc-influxdb
+          ports:
+            - containerPort: 8086
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/influxdb2
+              name: service-influxdb-claim0
+      restartPolicy: Always
+      volumes:
+        - name: service-influxdb-claim0
+          persistentVolumeClaim:
+            claimName: service-influxdb-claim0
+status: {}
+
+---
+apiVersion: v1
+data:
+  DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: 7e0d04119f3f9abecb38129b8783c73d1ff48454a0e42ec92d500a8ffef9b44a
+  DOCKER_INFLUXDB_INIT_BUCKET: wx
+  DOCKER_INFLUXDB_INIT_HOST: service-influxdb
+  DOCKER_INFLUXDB_INIT_MODE: setup
+  DOCKER_INFLUXDB_INIT_ORG: wx
+  DOCKER_INFLUXDB_INIT_PASSWORD: WeatherisFunDontch4kn0w
+  DOCKER_INFLUXDB_INIT_PORT: "8086"
+  DOCKER_INFLUXDB_INIT_RETENTION: 7d
+  DOCKER_INFLUXDB_INIT_USERNAME: wxman
+  GRAFANA_PORT: "3000"
+  TELEGRAF_CFG_PATH: ./services/telegraf/telegraf.conf
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: service-influxdb-env
+  name: env
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: service-relay
+  name: service-relay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: service-relay
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/wx: "true"
+        io.kompose.service: service-relay
+    spec:
+      containers:
+        - env:
+            - name: KAFKA_BROKERS
+              value: kafka-1:9092
+            - name: KAFKA_TOPIC
+              value: wxTopic
+            - name: STATION_URL
+              value: http://10.20.70.10
+          image: cwittofur/wx:svc-relay
+          name: wx-svc-relay
+          resources: {}
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: service-telegraf
+  name: service-telegraf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: service-telegraf
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/wx: "true"
+        io.kompose.service: service-telegraf
+    spec:
+      containers:
+        - env:
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_BUCKET
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_HOST
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_MODE
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_ORG
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_PASSWORD
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_PORT
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_RETENTION
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_RETENTION
+                  name: env
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: DOCKER_INFLUXDB_INIT_USERNAME
+                  name: env
+            - name: GRAFANA_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: GRAFANA_PORT
+                  name: env
+            - name: TELEGRAF_CFG_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: TELEGRAF_CFG_PATH
+                  name: env
+          image: telegraf:1.26.1
+          name: wx-svc-telegraf
+          resources: {}
+      restartPolicy: Always
+      volumes:
+        - name: service-telegraf-claim0
+          configMap:
+            name: telegraf-config
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: zookeeper-1
+  name: zookeeper-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: zookeeper-1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml -o kubemanifests.yaml
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/wx: "true"
+        io.kompose.service: zookeeper-1
+    spec:
+      containers:
+        - image: cwittofur/wx:zookeeper
+          name: zookeeper-1
+          resources: {}
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: zookeeper-1-claim0
+          configMap:
+            name: zookeeper-1-config
+status: {}
