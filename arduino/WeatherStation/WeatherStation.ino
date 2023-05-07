@@ -501,9 +501,6 @@ void doEveryMinute() {
   // Update hourly rainfall amounts
   updateHourlyRainfall();
 
-  hourlyRainAmount = float(rainPerHourArray[rain1hIndex] * RAIN_CLICK_CONVERSION_FACTOR);
-  dailyRainAmount = calculateDailyRainAmount();
-
   #ifdef DEBUG
     displayArrays('m');
     displayArrays('h');
@@ -553,6 +550,9 @@ void update10MinWindGust() {
 void updateHourlyRainfall() {
   rainPerHourArray[rain1hIndex] = irqRainClicks;
   rainDailyArray[rainDailyIndex] = irqTotalRainClicks;
+
+  hourlyRainAmount = float(rainPerHourArray[rain1hIndex] * RAIN_CLICK_CONVERSION_FACTOR);
+  dailyRainAmount = calculateDailyRainAmount();
 
   rain1hIndex++;
   if (rain1hIndex > RAIN_1H_ARRAY_DEPTH - 1) {
