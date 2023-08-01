@@ -22,7 +22,7 @@
 
 // Constants
 #define WIND_SENSOR_DEBOUNCE_SETTLING_TIME 10  // milliseconds
-#define RAIN_SENSOR_DEBOUNCE_SETTLING_TIME 75  // milliseconds
+#define RAIN_SENSOR_DEBOUNCE_SETTLING_TIME 100  // milliseconds
 #define HTTP_CONNECTION_TIMEOUT 500            // milliseconds
 #define RAIN_CLICK_CONVERSION_FACTOR 0.011     // inches per click
 #define WIND_CLICK_CONVERSION_FACTOR 1.492     // miles per hour per click
@@ -340,6 +340,9 @@ void init_variables() {
   
   init_daily_variables();
 
+  memset(rainDailyArray, 0, RAIN_DAILY_ARRAY_DEPTH);
+  memset(rainPerHourArray, 0, RAIN_1H_ARRAY_DEPTH);
+
   lastLoopCycleTime = millis();
 }
 
@@ -367,10 +370,7 @@ void init_daily_variables() {
   lastRainClickTime = 0;
 
   irqWindClicks = 0;
-  lastWindClickTime = 0;
-
-  memset(rainDailyArray, 0, RAIN_DAILY_ARRAY_DEPTH);
-  memset(rainPerHourArray, 0, RAIN_1H_ARRAY_DEPTH);
+  lastWindClickTime = 0;  
 }
 
 void setup() {
@@ -609,7 +609,9 @@ float calculateDailyRainAmount() {
   int rainClickCount = 0;
 
   for (int i = 0; i < RAIN_DAILY_ARRAY_DEPTH - 1; i++) {
-    rainClickCount += rainDailyArray[i];
+    if (rainDailyArray[i] > 0) {
+      rainClickCount += rainDailyArray[i];
+    }
   }
 
   return float(rainClickCount * RAIN_CLICK_CONVERSION_FACTOR);
