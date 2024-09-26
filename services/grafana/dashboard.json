@@ -23,12 +23,83 @@
   "liveNow": false,
   "panels": [
     {
+      "datasource": {
+        "default": true,
+        "type": "influxdb",
+        "uid": "bdz0yyvrldv5sa"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "lengthin"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 17,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "bdz0yyvrldv5sa"
+          },
+          "query": "from(bucket: \"wx\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"wx\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"rain24H\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\r\n  |> yield(name: \"last\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Rain Total",
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "id": 1,
       "panels": [],
@@ -68,9 +139,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 6,
         "x": 0,
-        "y": 1
+        "y": 9
       },
       "id": 5,
       "options": {
@@ -95,7 +166,7 @@
             "type": "influxdb",
             "uid": "e4ff941e-ef4a-461d-aa35-407e70f7da08"
           },
-          "query": "from(bucket: \"wx\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"wx\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\r\n  |> yield(name: \"last\")",
+          "query": "from(bucket: \"wx\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"wx\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"windSpeed\")  \r\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\r\n  |> yield(name: \"last\")",
           "refId": "A"
         }
       ],
@@ -133,9 +204,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 1
+        "w": 6,
+        "x": 6,
+        "y": 9
       },
       "id": 16,
       "options": {
@@ -148,7 +219,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^maxDailyGust 450de68764ed$/",
+          "fields": "/^maxDailyGust a543b25433c6$/",
           "values": false
         },
         "showPercentChange": false,
@@ -212,7 +283,7 @@
         "h": 7,
         "w": 4,
         "x": 0,
-        "y": 9
+        "y": 17
       },
       "id": 2,
       "options": {
@@ -288,7 +359,7 @@
         "h": 7,
         "w": 4,
         "x": 4,
-        "y": 9
+        "y": 17
       },
       "id": 3,
       "options": {
@@ -363,7 +434,7 @@
         "h": 7,
         "w": 4,
         "x": 8,
-        "y": 9
+        "y": 17
       },
       "id": 4,
       "options": {
@@ -400,7 +471,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "id": 9,
       "title": "Charts",
@@ -469,7 +540,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 25
       },
       "id": 10,
       "options": {
@@ -562,7 +633,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 25
       },
       "id": 11,
       "options": {
@@ -653,7 +724,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 33
       },
       "id": 12,
       "options": {
@@ -743,7 +814,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 33
       },
       "id": 14,
       "options": {
@@ -841,7 +912,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 33
+        "y": 41
       },
       "id": 13,
       "options": {
@@ -862,7 +933,7 @@
             "type": "influxdb",
             "uid": "e4ff941e-ef4a-461d-aa35-407e70f7da08"
           },
-          "query": "from(bucket: \"wx\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"wx\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"10mgust\" or r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)",
+          "query": "from(bucket: \"wx\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"wx\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"10mgust\" or r[\"_field\"] == \"windSpeed\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)",
           "refId": "A"
         }
       ],
@@ -931,7 +1002,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 33
+        "y": 41
       },
       "id": 15,
       "options": {
@@ -1021,7 +1092,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 49
       },
       "id": 7,
       "options": {
@@ -1111,7 +1182,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 49
       },
       "id": 8,
       "options": {
@@ -1147,7 +1218,7 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
@@ -1168,6 +1239,6 @@
   "timezone": "",
   "title": "weather",
   "uid": "d141a484-f97e-4082-b9b9-50cfd3d5c6e8",
-  "version": 2,
+  "version": 4,
   "weekStart": ""
 }

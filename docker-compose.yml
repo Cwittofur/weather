@@ -36,7 +36,7 @@ services:
       - wx
   service-influxdb:
     container_name: wx-svc-influxdb
-    image: influxdb:2.7.0
+    image: influxdb:latest
     volumes:
       - ./services/influxdb/data:/var/lib/influxdb2:rw
     env_file:
@@ -49,7 +49,7 @@ services:
       - wx
   service-telegraf:
     container_name: wx-svc-telegraf
-    image: telegraf:1.26.1
+    image: telegraf:latest
     volumes:
       - ${TELEGRAF_CFG_PATH}:/etc/telegraf/telegraf.conf:rw
     env_file:

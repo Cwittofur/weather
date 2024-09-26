@@ -8,5 +8,6 @@ kafka/data/*
 
 services/relay/bin
 services/influxdb/*
+services/grafana/data/*
 
 .idea
