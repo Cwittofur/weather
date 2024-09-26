@@ -368,9 +368,6 @@ void init_daily_variables() {
 
   irqWindClicks = 0;
   lastWindClickTime = 0;
-
-  memset(rainDailyArray, 0, RAIN_DAILY_ARRAY_DEPTH);
-  memset(rainPerHourArray, 0, RAIN_1H_ARRAY_DEPTH);
 }
 
 void setup() {

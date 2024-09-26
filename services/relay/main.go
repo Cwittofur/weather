@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -97,23 +97,19 @@ type LightningReading struct {
 	Distance int  `json:"distance"`
 }
 
-func GetWeatherData(isMidnight bool) ApiResponse {
+func GetWeatherData() ApiResponse {
 	apiURL := os.Getenv("STATION_URL")
-
-	if isMidnight == true {
-		apiURL = apiURL + "/m"
-	}
 
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		fmt.Println("Error sending API request:", err)
+		log.Println("Error sending API request:", err)
 		return ApiResponse{}
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading API response body:", err)
+		log.Println("Error reading API response body:", err)
 		return ApiResponse{}
 	}
 
@@ -121,7 +117,7 @@ func GetWeatherData(isMidnight bool) ApiResponse {
 	var stationReading ApiResponse
 	err = json.Unmarshal(body, &stationReading)
 	if err != nil {
-		fmt.Println("Error unmarshaling API response JSON:", err)
+		log.Println("Error unmarshaling API response JSON:", err)
 		return ApiResponse{}
 	}
 
@@ -145,15 +141,19 @@ func SendDataToKafka(data []byte, topic string) {
 	)
 
 	if err != nil {
-		fmt.Println("Error writing to Kafka:", err)
+		log.Println("Error writing to Kafka:", err)
 		return
 	}
 
-	fmt.Println("Message sent to Kafka:", string(data))
+	val, present := os.LookupEnv("SHOW_DEBUG_LOG")
+
+	if present && val == "TRUE" {
+		log.Println("Message sent to Kafka:", string(data))
+	}
 }
 
 func Wind() {
-	stationReading := GetWeatherData(false)
+	stationReading := GetWeatherData()
 
 	message := KafkaWindData{
 		Speed:               stationReading.Wind.Speed,
@@ -173,7 +173,7 @@ func Wind() {
 }
 
 func Rain() {
-	stationReading := GetWeatherData(false)
+	stationReading := GetWeatherData()
 
 	message := RainReading{
 		Hour:  stationReading.Rain.Hour,
@@ -188,7 +188,7 @@ func Rain() {
 }
 
 func THP() {
-	stationReading := GetWeatherData(false)
+	stationReading := GetWeatherData()
 
 	message := ThpReading{
 		TempC:    stationReading.Thp.TempC,
@@ -208,40 +208,15 @@ func MarshalToJSON(message interface{}) []byte {
 	// Marshal message to JSON
 	messageJSON, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println("Error marshaling message to JSON:", err)
+		log.Println("Error marshaling message to JSON:", err)
 		return nil
 	}
 
 	return messageJSON
 }
 
-func fetchAndPushDataToKafka(isMidnight bool) {
-
-	// TODO : Make the apiUrl a param that gets passed in through the Dockerfile or compose file.
-	// For now this is fine
-
-	// Send API request
-
-	// Create new message
-	// message := KafkaWXData{
-	//	Timestamp:   time.Now().Unix(),
-	//	Temperature: stationReading.Thp.TempC,
-	//	Fahrenheit:  stationReading.Thp.TempF,
-	//	Humidity:    stationReading.Thp.Humidity,
-	//	Pressure:    stationReading.Thp.Pressure,
-	//	KafkaWind: KafkaWindData{
-	//		Speed:               stationReading.Wind.Speed,
-	//		Direction:           stationReading.Wind.Direction,
-	//		Speed2MinAvg:        stationReading.Wind.Speed2MinuteAverage,
-	//		Direction2MinAvg:    stationReading.Wind.Direction2MinuteAverage,
-	//		GustTenMinSpeed:     stationReading.Wind.GustTenMinuteMaxSpeed,
-	//		GustTenMinDirection: stationReading.Wind.GustTenMinuteMaxDirection,
-	//		MaxDailyGust:        stationReading.Wind.MaxDailyGust,
-	//	},
-	//	Rain:      stationReading.Rain,
-	//	Lightning: stationReading.Lightning,
-	//}
-	stationReading := GetWeatherData(isMidnight)
+func fetchAndPushDataToKafka() {
+	stationReading := GetWeatherData()
 
 	message := KafkaWxDataV2{
 		T:     time.Now().Unix(),
@@ -275,20 +250,7 @@ func main() {
 	s := gocron.NewScheduler(time.Local)
 
 	s.Every(1).Seconds().Do(func() {
-		fetchAndPushDataToKafka(false)
-		//Wind()
-	})
-
-	// s.Every(5).Seconds().Do(func() {
-	// 	THP()
-	// })
-
-	// s.Every(1).Minutes().Do(func() {
-	// 	Rain()
-	// })
-
-	s.Every(1).Day().At("00:00").Do(func() {
-		fetchAndPushDataToKafka(true)
+		fetchAndPushDataToKafka()
 	})
 
 	s.StartBlocking()
